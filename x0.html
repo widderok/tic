@@ -1,0 +1,243 @@
+﻿<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tic-Tac-Toe</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+        }
+
+        .board {
+            display: grid;
+            grid-template-columns: repeat(3, 100px);
+            grid-template-rows: repeat(3, 100px);
+            gap: 5px;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        .cell {
+            width: 100px;
+            height: 100px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2em;
+            border: 2px solid transparent;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+            .cell.taken {
+                cursor: not-allowed;
+            }
+
+        #status {
+            font-size: 1.5em;
+            margin-top: 20px;
+        }
+
+        button {
+            margin-top: 20px;
+            padding: 10px 20px;
+            font-size: 1em;
+            cursor: pointer;
+        }
+
+        /* Highlighting for winners */
+        .cell.highlight {
+            animation: highlightAnimation 0.5s ease-in-out;
+        }
+
+        /* Gold for X */
+        .cell.gold {
+            box-shadow: inset 0 0 20px 5px gold; /* Inner Gold Glow */
+        }
+
+        /* Anthracite for O */
+        .cell.anthracite {
+            box-shadow: inset 0 0 20px 5px #2f2f2f; /* Inner Anthracite Glow */
+        }
+
+        /* Rotation for cells - like before */
+        .cell.clicked {
+            transform: rotateX(180deg);
+        }
+        .board {
+            position: relative;
+            display: grid;
+            grid-template-columns: repeat(3, 100px);
+            grid-template-rows: repeat(3, 100px);
+            gap: 0; /* Entfernt Abstände zwischen Zellen */
+            width: 300px;
+            height: 300px;
+            margin: 20px auto; /* ZENTRIERT das Spielfeld */
+        }
+
+            .board::before, .board::after {
+                content: "";
+                position: absolute;
+                background-color: lightgray;
+                z-index: -1;
+            }
+
+            /* Horizontale Linien */
+            .board::before {
+                width: 101%;
+                height: 1px;
+                top: 101px; /* Exakte Mitte zwischen 1. und 2. Reihe */
+                left: 0;
+                box-shadow: 0 100px lightgray; /* Zweite Linie zwischen 2. und 3. Reihe */
+            }
+
+            /* Vertikale Linien */
+            .board::after {
+                height: 101%;
+                width: 1px;
+                left: 101px; /* Exakte Mitte zwischen 1. und 2. Spalte */
+                top: 0;
+                box-shadow: 100px 0 lightgray; /* Zweite Linie zwischen 2. und 3. Spalte */
+            }
+
+
+        @keyframes highlightAnimation {
+            0% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.2);
+            }
+
+            100% {
+                transform: scale(1);
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>Tic-Tac-Toe</h1>
+    <div id="status">Spieler X ist dran</div>
+    <div class="board" id="board"></div>
+    <button onclick="resetGame()">Neustart</button>
+
+    <script>
+        const board = document.getElementById("board");
+        const statusText = document.getElementById("status");
+        let currentPlayer = "X";
+        let gameBoard = ["", "", "", "", "", "", "", "", ""];
+        let gameActive = true;
+
+        function createBoard() {
+            board.innerHTML = "";
+            gameBoard.forEach((cell, index) => {
+                const div = document.createElement("div");
+                div.classList.add("cell");
+                div.dataset.index = index;
+                div.innerText = cell;
+                div.addEventListener("click", handleCellClick);
+                board.appendChild(div);
+            });
+        }
+
+        function handleCellClick(event) {
+            const index = event.target.dataset.index;
+            if (gameBoard[index] || !gameActive) return;
+
+            gameBoard[index] = currentPlayer;
+            event.target.innerText = currentPlayer;
+            event.target.classList.add("taken", "clicked");
+
+            // Färbe die Zelle je nach Spieler
+            if (currentPlayer === "X") {
+                event.target.classList.add("gold");
+            } else {
+                event.target.classList.add("anthracite");
+            }
+
+            setTimeout(() => {
+                event.target.classList.remove("clicked"); // Entfernt die Drehung nach der Animation
+            }, 500);
+
+            const winner = checkWin();
+            if (winner) {
+                statusText.innerText = `Spieler ${winner} gewinnt! 🎉`;
+                gameActive = false;
+                highlightWinningCells(winner); // Übergibt den Gewinner an die Funktion zum Hervorheben
+                return;
+            }
+
+            if (!gameBoard.includes("")) {
+                statusText.innerText = "Unentschieden!";
+                gameActive = false;
+                return;
+            }
+
+            currentPlayer = currentPlayer === "X" ? "O" : "X";
+            statusText.innerText = `Spieler ${currentPlayer} ist dran`;
+        }
+
+        function checkWin() {
+            const winPatterns = [
+                [0, 1, 2], [3, 4, 5], [6, 7, 8], // Reihen
+                [0, 3, 6], [1, 4, 7], [2, 5, 8], // Spalten
+                [0, 4, 8], [2, 4, 6] // Diagonalen
+            ];
+
+            const winningPattern = winPatterns.find(pattern => {
+                const [a, b, c] = pattern;
+                return gameBoard[a] && gameBoard[a] === gameBoard[b] && gameBoard[a] === gameBoard[c];
+            });
+
+            if (winningPattern) {
+                return gameBoard[winningPattern[0]];  // Gibt den Gewinner (X oder O) zurück
+            }
+
+            return null; // Kein Gewinner
+        }
+
+        function highlightWinningCells(winner) {
+            const winPatterns = [
+                [0, 1, 2], [3, 4, 5], [6, 7, 8], // Reihen
+                [0, 3, 6], [1, 4, 7], [2, 5, 8], // Spalten
+                [0, 4, 8], [2, 4, 6] // Diagonalen
+            ];
+
+            const winningPattern = winPatterns.find(pattern => {
+                const [a, b, c] = pattern;
+                return gameBoard[a] && gameBoard[a] === gameBoard[b] && gameBoard[a] === gameBoard[c];
+            });
+
+            if (winningPattern) {
+                // Hebt die Felder hervor und färbt sie je nach Gewinner
+                winningPattern.forEach(index => {
+                    const cell = board.children[index];
+                    cell.classList.add("highlight"); // Fügt den "highlight"-Effekt hinzu
+
+                    // Wenn der Gewinner "X" ist, wird Gold hinzugefügt
+                    if (winner === "X") {
+                        cell.classList.add("gold");
+                    } else if (winner === "O") {
+                        // Wenn der Gewinner "O" ist, wird Anthrazit hinzugefügt
+                        cell.classList.add("anthracite");
+                    }
+                });
+            }
+        }
+
+        function resetGame() {
+            gameBoard = ["", "", "", "", "", "", "", "", ""];
+            currentPlayer = "X";
+            gameActive = true;
+            statusText.innerText = "Spieler X ist dran";
+            createBoard();
+        }
+
+        createBoard();
+    </script>
+</body>
+</html>
+
